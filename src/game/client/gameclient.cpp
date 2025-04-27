@@ -4974,19 +4974,19 @@ void CGameClient::HandleBot(CNetObj_PlayerInput & Input)
 		}
 		else if(m_pCore->m_aWeapons[WEAPON_LASER].m_Got && m_pCore->m_aWeapons[WEAPON_LASER].m_Ammo && distance(*m_pPos, m_aClients[pClosestChar->GetCid()].m_Predicted.m_Pos) < m_aTuning[0].m_LaserReach)
 		{
-			GetCharacter()->SetWeapon(WEAPON_LASER);
+			Input.m_WantedWeapon = WEAPON_LASER +1;
 		}
 		else if(m_pCore->m_aWeapons[WEAPON_SHOTGUN].m_Got && m_pCore->m_aWeapons[WEAPON_SHOTGUN].m_Ammo && distance(*m_pPos, m_aClients[pClosestChar->GetCid()].m_Predicted.m_Pos) < m_aTuning[0].m_ShotgunLifetime * 3000.0f)
 		{
-			GetCharacter()->SetWeapon(WEAPON_SHOTGUN);
+			Input.m_WantedWeapon = WEAPON_SHOTGUN +1;
 		}
 		else if(m_pCore->m_aWeapons[WEAPON_HAMMER].m_Got && distance(*m_pPos, m_aClients[pClosestChar->GetCid()].m_Predicted.m_Pos) < 40.0f)
 		{
-			GetCharacter()->SetWeapon(WEAPON_HAMMER);
+			Input.m_WantedWeapon = WEAPON_HAMMER;
 		}
 		else if(m_pCore->m_aWeapons[WEAPON_GUN].m_Got)
 		{
-			GetCharacter()->SetWeapon(WEAPON_GUN);
+			Input.m_WantedWeapon = WEAPON_GUN +1;
 		}
 		
 		if((m_pCore->m_ActiveWeapon == WEAPON_LASER ? (!Collision()->FastIntersectLine(*m_pPos,m_aClients[pClosestChar->GetCid()].m_Predicted.m_Pos,nullptr,nullptr) && distance(*m_pPos, m_aClients[pClosestChar->GetCid()].m_Predicted.m_Pos) < m_aTuning[0].m_LaserReach) : !Collision()->FastIntersectLine(*m_pPos,m_aClients[pClosestChar->GetCid()].m_Predicted.m_Pos,nullptr,nullptr)) || m_pCore->m_aWeapons[WEAPON_NINJA].m_Got)
