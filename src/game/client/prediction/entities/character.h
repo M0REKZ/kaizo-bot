@@ -134,6 +134,12 @@ public:
 
 	bool IsSuper() { return m_Core.m_Super; }
 
+	int m_Health = 0;
+	int m_Armor = 0;
+	int GetHealth();
+	int GetArmor();
+	CNetObj_PlayerInput GetLatestInput() { return m_LatestInput; }
+
 private:
 	// weapon info
 	int m_aHitObjects[10];

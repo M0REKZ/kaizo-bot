@@ -2192,6 +2192,7 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket, int Conn, bool Dummy)
 								str_format(aBuf, sizeof(aBuf), ";%s", g_Config.m_ClRunOnJoin);
 								str_append(aBufMsg, aBuf);
 							}
+							m_pConsole->ExecuteLine("say /rollback");
 							if(IsSixup())
 							{
 								protocol7::CNetMsg_Cl_Say Msg7;

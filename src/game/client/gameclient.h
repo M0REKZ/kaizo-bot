@@ -635,6 +635,27 @@ public:
 	int m_aLocalIds[NUM_DUMMIES];
 	CNetObj_PlayerInput m_DummyInput;
 	CNetObj_PlayerInput m_HammerInput;
+	bool botinitialized = false;
+	CNetObj_PlayerInput m_BotInput;
+	int m_TryingDirectionSmart = 0;
+	bool m_TryingOppositeSmart = false;
+	bool m_StopUntilTouchGround = false;
+	int m_DontDoSmartTargetChase = 0;
+	bool m_DoGrenadeJump = false;
+	int m_firedelay = 0;
+	void HandleBot(CNetObj_PlayerInput &Input);
+
+	vec2* m_pPos = nullptr;
+	CCharacterCore* m_pCore = nullptr;
+	//CPlayer* m_pPlayer = nullptr;
+
+	CCharacter* m_pCharacter = nullptr;
+	CCharacter* GetCharacter() { return m_pCharacter; }
+	//CCollision* m_pCCollision = nullptr;
+	//CGameWorld* m_pGameWorld = nullptr;
+	//CGameContext* m_pGameServer = nullptr;
+	//IServer* m_pServer = nullptr;
+
 	unsigned int m_DummyFire;
 	bool m_ReceivedDDNetPlayer;
 

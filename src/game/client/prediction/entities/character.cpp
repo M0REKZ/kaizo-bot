@@ -1374,6 +1374,9 @@ void CCharacter::Read(CNetObj_Character *pChar, CNetObj_DDNetCharacter *pExtende
 	if(distance(m_PrevPos, m_Pos) > 10.f * 32.f) // reset prevpos if the distance is high
 		m_PrevPos = m_Pos;
 
+	m_Health = pChar->m_Health;
+	m_Armor = pChar->m_Armor;
+
 	if(pChar->m_Jumped & 2)
 		m_Core.m_JumpedTotal = m_Core.m_Jumps;
 	m_AttackTick = pChar->m_AttackTick;
@@ -1461,4 +1464,14 @@ CCharacter::~CCharacter()
 {
 	if(GameWorld())
 		GameWorld()->RemoveCharacter(this);
+}
+
+
+int CCharacter::GetHealth()
+{
+	return m_Health;
+}
+int CCharacter::GetArmor()
+{
+	return m_Armor;
 }
