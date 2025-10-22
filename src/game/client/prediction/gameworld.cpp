@@ -15,6 +15,7 @@
 #include <game/client/projectile_data.h>
 #include <game/mapbugs.h>
 #include <game/mapitems.h>
+#include <game/collision.h>
 
 #include <algorithm>
 #include <utility>
@@ -651,6 +652,9 @@ void CGameWorld::CopyWorld(CGameWorld *pFrom)
 			}
 		}
 	}
+
+	OnCopyWorld();
+
 	m_IsValidCopy = true;
 }
 
@@ -741,4 +745,43 @@ void CGameWorld::Clear()
 bool CGameWorld::EmulateBug(int Bug) const
 {
 	return m_pMapBugs->Contains(Bug);
+}
+
+void CGameWorld::OnCopyWorld()
+{
+    /*for (int i = 0; i < 4; i++)
+	{
+		m_PointerTelePositions[i].m_X = 0;
+		m_PointerTelePositions[i].m_Y = 0;
+		m_PointerTelePositions[i].m_Exists = false;
+	}*/
+
+    const CTile *pTiles = m_pCollision->GameLayer();
+	for(int y = 0; y < m_pCollision->GetHeight(); y++)
+	{
+		for(int x = 0; x < m_pCollision->GetWidth(); x++)
+		{
+			OnGameTile(x, y, &pTiles[y * m_pCollision->GetWidth() + x]);
+		}
+	}
+}
+
+void CGameWorld::OnGameTile(int X, int Y, const CTile *pTile)
+{
+    if(!pTile)
+        return;
+
+    int Index = pTile->m_Index;
+
+	switch(Index)
+	{
+	case ENTITY_OFFSET + ENTITY_FLAGSTAND_RED:
+		m_FlagPositions[0] = vec2(X * 32 + 16, Y * 32 + 16);
+		FlagFound = true;
+		break;
+	case ENTITY_OFFSET + ENTITY_FLAGSTAND_BLUE:
+		m_FlagPositions[1] = vec2(X * 32 + 16, Y * 32 + 16);
+		FlagFound = true;
+		break;
+	}
 }

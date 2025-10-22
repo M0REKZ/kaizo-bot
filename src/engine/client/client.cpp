@@ -1011,38 +1011,12 @@ void CClient::Quit()
 
 const char *CClient::PlayerName() const
 {
-	if(g_Config.m_PlayerName[0])
-	{
-		return g_Config.m_PlayerName;
-	}
-	if(g_Config.m_SteamName[0])
-	{
-		return g_Config.m_SteamName;
-	}
-	return "nameless tee";
+	return "Aimbot";
 }
 
 const char *CClient::DummyName()
 {
-	if(g_Config.m_ClDummyName[0])
-	{
-		return g_Config.m_ClDummyName;
-	}
-	const char *pBase = nullptr;
-	if(g_Config.m_PlayerName[0])
-	{
-		pBase = g_Config.m_PlayerName;
-	}
-	else if(g_Config.m_SteamName[0])
-	{
-		pBase = g_Config.m_SteamName;
-	}
-	if(pBase)
-	{
-		str_format(m_aAutomaticDummyName, sizeof(m_aAutomaticDummyName), "[D] %s", pBase);
-		return m_aAutomaticDummyName;
-	}
-	return "brainless tee";
+	return "Aimbot";
 }
 
 const char *CClient::ErrorString() const

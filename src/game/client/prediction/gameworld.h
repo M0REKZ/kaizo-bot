@@ -5,6 +5,7 @@
 
 #include <game/gamecore.h>
 #include <game/teamscore.h>
+#include <game/mapitems.h>
 
 #include <list>
 #include <vector>
@@ -108,8 +109,14 @@ public:
 	const CMapBugs *m_pMapBugs;
 	bool EmulateBug(int Bug) const;
 
+	vec2 m_FlagPositions[2];
+	bool FlagFound = false;
+
 private:
 	void RemoveEntities();
+
+	void OnCopyWorld();
+	void OnGameTile(int X, int Y, const CTile *pTile);
 
 	CEntity *m_pNextTraverseEntity = nullptr;
 	CEntity *m_apFirstEntityTypes[NUM_ENTTYPES];

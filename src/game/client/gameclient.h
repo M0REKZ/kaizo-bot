@@ -645,6 +645,8 @@ public:
 	int m_firedelay = 0;
 	void HandleBot(CNetObj_PlayerInput &Input);
 
+	int m_ChaseFlagTeam = TEAM_RED;
+
 	vec2* m_pPos = nullptr;
 	CCharacterCore* m_pCore = nullptr;
 	//CPlayer* m_pPlayer = nullptr;

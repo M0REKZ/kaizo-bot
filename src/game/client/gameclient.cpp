@@ -1671,6 +1671,7 @@ void CGameClient::OnNewSnapshot()
 						if(pInfo->m_Team == TEAM_SPECTATORS)
 						{
 							m_Snap.m_SpecInfo.m_Active = true;
+							Console()->ExecuteLine("team 1", IConsole::CLIENT_ID_NO_GAME);
 						}
 					}
 
@@ -2900,7 +2901,7 @@ void CGameClient::SendInfo(bool Start)
 		Msg.m_pName = Client()->PlayerName();
 		Msg.m_pClan = g_Config.m_PlayerClan;
 		Msg.m_Country = g_Config.m_PlayerCountry;
-		Msg.m_pSkin = g_Config.m_ClPlayerSkin;
+		Msg.m_pSkin = "0_Cyborg Greyfox_KZ";
 		Msg.m_UseCustomColor = g_Config.m_ClPlayerUseCustomColor;
 		Msg.m_ColorBody = g_Config.m_ClPlayerColorBody;
 		Msg.m_ColorFeet = g_Config.m_ClPlayerColorFeet;
@@ -2915,7 +2916,7 @@ void CGameClient::SendInfo(bool Start)
 		Msg.m_pName = Client()->PlayerName();
 		Msg.m_pClan = g_Config.m_PlayerClan;
 		Msg.m_Country = g_Config.m_PlayerCountry;
-		Msg.m_pSkin = g_Config.m_ClPlayerSkin;
+		Msg.m_pSkin = "0_Cyborg Greyfox_KZ";
 		Msg.m_UseCustomColor = g_Config.m_ClPlayerUseCustomColor;
 		Msg.m_ColorBody = g_Config.m_ClPlayerColorBody;
 		Msg.m_ColorFeet = g_Config.m_ClPlayerColorFeet;
@@ -4807,15 +4808,14 @@ void CGameClient::HandleBot(CNetObj_PlayerInput & Input)
 
 		if(!m_pCharacter)
 			return;
-		m_pCore = (CCharacterCore *)m_pCharacter->Core(); //evil cast
+		m_pCore = &m_aClients[GetCharacter()->GetCid()].m_Predicted; //evil cast
 		//m_pPlayer = pChr->GetPlayer();
 
 		//m_pCCollision = Collision();
 		//m_pGameWorld = GameWorld();
 		//m_pGameServer = pChr->GameServer();
 		//m_pServer = pChr->Server();
-		
-		m_pPos = &m_LocalCharacterPos;
+		m_pPos = &m_aClients[GetCharacter()->GetCid()].m_RenderPos;
 		//botinitialized = true;
 
 	
@@ -4825,8 +4825,6 @@ void CGameClient::HandleBot(CNetObj_PlayerInput & Input)
 	
 	CCharacter *pClosestChar = nullptr;
 	CPickup *pClosestPickup = nullptr;
-	CEntity *pEnemyFlag = nullptr;
-	CEntity *pTeamFlag = nullptr;
 	bool targetisup = false;
 	bool dontjump = false;
 	bool butjumpifwall = false;
@@ -4837,22 +4835,41 @@ void CGameClient::HandleBot(CNetObj_PlayerInput & Input)
 	bool DoSmartTargetChase = false;
 	
 	Input.m_Fire = false;
+
+	CNetObj_Flag *pTeamFlag = nullptr;
+	CNetObj_Flag *pEnemyFlag = nullptr;
+	CNetObj_GameData *pGameData = nullptr;
 	
 	//if(str_find_nocase(GameServer()->m_pController->m_pGameType, "CTF"))
-	/*{
-		CEntity *p = (CEntity *)GameServer()->m_World.FindFirst(CGameWorld::ENTTYPE_FLAG);
-		for(; p; p = (CEntity *)p->TypeNext())
+	int itemNum = Client()->SnapNumItems(IClient::SNAP_CURRENT);
+	for(int i = 0; i < itemNum; i++)
+	{
+		const IClient::CSnapItem Item = Client()->SnapGetItem(IClient::SNAP_CURRENT, i);
+
+		if(Item.m_Type == NETOBJTYPE_FLAG)
 		{
-			
-			if(p->GetTeam() == m_pPlayer->GetTeam())
-			{
-				pTeamFlag = p;
+			if(pTeamFlag && pEnemyFlag)
 				continue;
-			}
-			
-			pEnemyFlag = p;
+
+			CNetObj_Flag *pFlag = (CNetObj_Flag *)Item.m_pData;
+			if(pFlag->m_Team == m_aClients[GetCharacter()->GetCid()].m_Team)
+				pTeamFlag = pFlag;
+			else
+				pEnemyFlag = pFlag;
+
 		}
-	}*/
+		else if(Item.m_Type == NETOBJTYPE_GAMEDATA)
+		{
+			pGameData = (CNetObj_GameData *)Item.m_pData;
+		}
+	}
+
+	int aCarriersTeam[2] = { -1, -1 };
+	if(pGameData)
+	{
+		aCarriersTeam[0] = pGameData->m_FlagCarrierRed;
+		aCarriersTeam[1] = pGameData->m_FlagCarrierBlue;
+	}
 	
 	{
 		float ClosestRange = 100000.0f;
@@ -4921,26 +4938,66 @@ void CGameClient::HandleBot(CNetObj_PlayerInput & Input)
 		
 		pClosestChar = pClosest;
 	}
+
+	if(m_PredictedWorld.FlagFound)
+	{
+		TargetPos = m_PredictedWorld.m_FlagPositions[m_ChaseFlagTeam];
+		TargetPosSet = true;
+		DoSmartTargetChase = true;
+
+		if(distance(*m_pPos, TargetPos) < 48.f)
+		{
+			m_ChaseFlagTeam = m_ChaseFlagTeam == TEAM_RED ? TEAM_BLUE : TEAM_RED;
+		}
+	}
 	
 	/*if(pEnemyFlag)
 	{
-		if(pTeamFlag && pEnemyFlag->m_pCarrier == GetCharacter())
+		if(pTeamFlag)
 		{
-			//Input.m_Direction = pTeamFlag->m_Pos->x > m_pPos->x ? 1 : -1;
-			TargetPos = pTeamFlag->m_Pos;
+			if(aCarriersTeam[pEnemyFlag->m_Team] == GetCharacter()->GetCid())
+			{
+				//Input.m_Direction = pTeamFlag->m_Pos->x > m_pPos->x ? 1 : -1;
+				TargetPos = vec2(pTeamFlag->m_X, pTeamFlag->m_Y);
+				TargetPosSet = true;
+				DoSmartTargetChase = true;
+			}
+			else if(aCarriersTeam[pEnemyFlag->m_Team] < 0)
+			{
+				//Input.m_Direction = pEnemyFlag->m_Pos->x > m_pPos->x ? 1 : -1;
+				TargetPos = vec2(pEnemyFlag->m_X, pEnemyFlag->m_Y);
+				TargetPosSet = true;
+				DoSmartTargetChase = true;
+			}
+		}
+		else
+		{
+			TargetPos = m_GameWorld.m_FlagPositions[m_aClients[GetCharacter()->GetCid()].m_Team == TEAM_RED ? TEAM_BLUE : TEAM_RED];
 			TargetPosSet = true;
 			DoSmartTargetChase = true;
 		}
-		else if(!pEnemyFlag->m_pCarrier)
+	}
+	else
+	{
+		if(pTeamFlag)
 		{
-			//Input.m_Direction = pEnemyFlag->m_Pos->x > m_pPos->x ? 1 : -1;
-			TargetPos = pEnemyFlag->m_Pos;
+			if(aCarriersTeam[pTeamFlag->m_Team] < 0)
+			{
+				//Input.m_Direction = pTeamFlag->m_Pos->x > m_pPos->x ? 1 : -1;
+				TargetPos = m_GameWorld.m_FlagPositions[m_aClients[GetCharacter()->GetCid()].m_Team == TEAM_RED ? TEAM_BLUE : TEAM_RED];
+				TargetPosSet = true;
+				DoSmartTargetChase = true;
+			}
+		}
+		else
+		{
+			TargetPos = m_GameWorld.m_FlagPositions[m_aClients[GetCharacter()->GetCid()].m_Team == TEAM_RED ? TEAM_BLUE : TEAM_RED];
 			TargetPosSet = true;
 			DoSmartTargetChase = true;
 		}
 	}*/
 	
-	if(pClosestPickup)// && !(pTeamFlag && pEnemyFlag && (pEnemyFlag->m_pCarrier == GetCharacter() || !pEnemyFlag->m_pCarrier)))
+	if(!TargetPosSet && pClosestPickup) //&& !(pTeamFlag && pEnemyFlag && (aCarriersTeam[pEnemyFlag->m_Team] == GetCharacter()->GetCid() || aCarriersTeam[pEnemyFlag->m_Team] < 0)))
 	{
 		//Input.m_Direction = pClosestPickup->m_Pos->x > m_pPos->x ? 1 : -1;
 		TargetPos = pClosestPickup->m_Pos;
@@ -4962,7 +5019,7 @@ void CGameClient::HandleBot(CNetObj_PlayerInput & Input)
 		else
 			m_firedelay = 0;
 		
-		if(!pClosestPickup) //&& !(pTeamFlag && pEnemyFlag && (pEnemyFlag->m_pCarrier == GetCharacter() || !pEnemyFlag->m_pCarrier)))
+		if(!TargetPosSet && !pClosestPickup )//&& !(pTeamFlag && pEnemyFlag && (aCarriersTeam[pEnemyFlag->m_Team] == GetCharacter()->GetCid() || aCarriersTeam[pEnemyFlag->m_Team] < 0)))
 		{
 			TargetPos = m_aClients[pClosestChar->GetCid()].m_Predicted.m_Pos;
 			TargetPosSet = true;
@@ -4972,7 +5029,7 @@ void CGameClient::HandleBot(CNetObj_PlayerInput & Input)
 		if(m_pCore->m_aWeapons[WEAPON_NINJA].m_Got)
 		{
 		}
-		else if(m_pCore->m_aWeapons[WEAPON_LASER].m_Got && m_pCore->m_aWeapons[WEAPON_LASER].m_Ammo && distance(*m_pPos, m_aClients[pClosestChar->GetCid()].m_Predicted.m_Pos) < m_aTuning[0].m_LaserReach)
+		else if(m_pCore->m_aWeapons[WEAPON_LASER].m_Got && m_pCore->m_aWeapons[WEAPON_LASER].m_Ammo && distance(*m_pPos, m_aClients[pClosestChar->GetCid()].m_Predicted.m_Pos) < m_aTuning[0].m_LaserReach + 28.f)
 		{
 			Input.m_WantedWeapon = WEAPON_LASER +1;
 		}
@@ -4989,7 +5046,7 @@ void CGameClient::HandleBot(CNetObj_PlayerInput & Input)
 			Input.m_WantedWeapon = WEAPON_GUN +1;
 		}
 		
-		if((m_pCore->m_ActiveWeapon == WEAPON_LASER ? (!Collision()->FastIntersectLine(*m_pPos,m_aClients[pClosestChar->GetCid()].m_Predicted.m_Pos,nullptr,nullptr) && distance(*m_pPos, m_aClients[pClosestChar->GetCid()].m_Predicted.m_Pos) < m_aTuning[0].m_LaserReach) : !Collision()->FastIntersectLine(*m_pPos,m_aClients[pClosestChar->GetCid()].m_Predicted.m_Pos,nullptr,nullptr)) || m_pCore->m_aWeapons[WEAPON_NINJA].m_Got)
+		if((m_pCore->m_ActiveWeapon == WEAPON_LASER ? (!Collision()->FastIntersectLine(*m_pPos,m_aClients[pClosestChar->GetCid()].m_Predicted.m_Pos,nullptr,nullptr) && distance(*m_pPos, m_aClients[pClosestChar->GetCid()].m_Predicted.m_Pos) < m_aTuning[0].m_LaserReach + 28.f) : !Collision()->FastIntersectLine(*m_pPos,m_aClients[pClosestChar->GetCid()].m_Predicted.m_Pos,nullptr,nullptr)) || m_pCore->m_aWeapons[WEAPON_NINJA].m_Got)
 		{
 			if(!GetCharacter()->GetLatestInput().m_Fire)
 				Input.m_Fire = true;
