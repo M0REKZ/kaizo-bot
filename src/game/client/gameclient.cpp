@@ -2814,13 +2814,40 @@ void CGameClient::SendStartInfo7(bool Dummy)
 {
 	protocol7::CNetMsg_Cl_StartInfo Msg;
 	Msg.m_pName = Dummy ? Client()->DummyName() : Client()->PlayerName();
-	Msg.m_pClan = Dummy ? Config()->m_ClDummyClan : Config()->m_PlayerClan;
-	Msg.m_Country = Dummy ? Config()->m_ClDummyCountry : Config()->m_PlayerCountry;
+	Msg.m_pClan = "";
+	Msg.m_Country = -1;
 	for(int p = 0; p < protocol7::NUM_SKINPARTS; p++)
 	{
-		Msg.m_apSkinPartNames[p] = CSkins7::ms_apSkinVariables[(int)Dummy][p];
-		Msg.m_aUseCustomColors[p] = *CSkins7::ms_apUCCVariables[(int)Dummy][p];
-		Msg.m_aSkinPartColors[p] = *CSkins7::ms_apColorVariables[(int)Dummy][p];
+		Msg.m_aUseCustomColors[p] = true;
+
+		if(p == 0)
+		{
+			Msg.m_apSkinPartNames[p] = "fox";
+			Msg.m_aSkinPartColors[p] = 1769560;
+			continue;
+		}
+
+		if(p == 1)
+		{
+			Msg.m_apSkinPartNames[p] = "warpaint";
+			Msg.m_aSkinPartColors[p] = 4278190080;
+			continue;
+		}
+
+		if(p == 2)
+		{
+			Msg.m_apSkinPartNames[p] = "hair";
+			continue;
+		}
+
+		if(p == 5)
+		{
+			Msg.m_apSkinPartNames[p] = "negative";
+			Msg.m_aSkinPartColors[p] = 65408;
+			continue;
+		}
+
+		Msg.m_apSkinPartNames[p] = "standard";
 	}
 	CMsgPacker Packer(&Msg, false, true);
 	if(Msg.Pack(&Packer))
@@ -2899,8 +2926,8 @@ void CGameClient::SendInfo(bool Start)
 	{
 		CNetMsg_Cl_StartInfo Msg;
 		Msg.m_pName = Client()->PlayerName();
-		Msg.m_pClan = g_Config.m_PlayerClan;
-		Msg.m_Country = g_Config.m_PlayerCountry;
+		Msg.m_pClan = "";
+		Msg.m_Country = -1;
 		Msg.m_pSkin = "0_Cyborg Greyfox_KZ";
 		Msg.m_UseCustomColor = g_Config.m_ClPlayerUseCustomColor;
 		Msg.m_ColorBody = g_Config.m_ClPlayerColorBody;
@@ -2914,8 +2941,8 @@ void CGameClient::SendInfo(bool Start)
 	{
 		CNetMsg_Cl_ChangeInfo Msg;
 		Msg.m_pName = Client()->PlayerName();
-		Msg.m_pClan = g_Config.m_PlayerClan;
-		Msg.m_Country = g_Config.m_PlayerCountry;
+		Msg.m_pClan = "";
+		Msg.m_Country = -1;
 		Msg.m_pSkin = "0_Cyborg Greyfox_KZ";
 		Msg.m_UseCustomColor = g_Config.m_ClPlayerUseCustomColor;
 		Msg.m_ColorBody = g_Config.m_ClPlayerColorBody;
@@ -4787,6 +4814,7 @@ int CGameClient::FindFirstMultiViewId()
 
 void CGameClient::HandleBot(CNetObj_PlayerInput & Input)
 {
+	Input.m_PlayerFlags = protocol7::PLAYERFLAG_BOT;
 	Input.m_Direction = 0;
 	Input.m_Jump = 0;
 	Input.m_Hook = 0;
