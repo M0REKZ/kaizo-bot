@@ -4836,7 +4836,7 @@ void CGameClient::HandleBot(CNetObj_PlayerInput & Input)
 
 		if(!m_pCharacter)
 			return;
-		m_pCore = &m_aClients[GetCharacter()->GetCid()].m_Predicted; //evil cast
+		m_pCore = (CCharacterCore *)m_pCharacter->Core(); //evil cast
 		//m_pPlayer = pChr->GetPlayer();
 
 		//m_pCCollision = Collision();
@@ -5549,7 +5549,7 @@ void CGameClient::HandleBot(CNetObj_PlayerInput & Input)
 		if(m_DoGrenadeJump && ((GetCharacter()->GetWeaponGot(WEAPON_GRENADE) && GetCharacter()->GetWeaponAmmo(WEAPON_GRENADE)) || (false && GetCharacter()->GetWeaponGot(WEAPON_LASER) && GetCharacter()->GetWeaponAmmo(WEAPON_LASER))))
 		{
 			if(GetCharacter()->GetWeaponGot(WEAPON_GRENADE) && GetCharacter()->GetWeaponAmmo(WEAPON_GRENADE))
-				GetCharacter()->SetActiveWeapon(WEAPON_GRENADE);
+				Input.m_WantedWeapon = 1+ WEAPON_GRENADE;
 			else if(false && GetCharacter()->GetWeaponGot(WEAPON_LASER) && GetCharacter()->GetWeaponAmmo(WEAPON_LASER))
 				GetCharacter()->SetActiveWeapon(WEAPON_LASER);
 			Input.m_TargetX = 0;
@@ -5566,7 +5566,7 @@ void CGameClient::HandleBot(CNetObj_PlayerInput & Input)
 				m_DoGrenadeJump = true;
 				Input.m_Jump = true;
 				if(GetCharacter()->GetWeaponGot(WEAPON_GRENADE) && GetCharacter()->GetWeaponAmmo(WEAPON_GRENADE))
-					GetCharacter()->SetActiveWeapon(WEAPON_GRENADE);
+					Input.m_WantedWeapon = 1+ WEAPON_GRENADE;
 				else if(false && GetCharacter()->GetWeaponGot(WEAPON_LASER) && GetCharacter()->GetWeaponAmmo(WEAPON_LASER))
 					GetCharacter()->SetActiveWeapon(WEAPON_LASER);
 			}
@@ -5576,7 +5576,7 @@ void CGameClient::HandleBot(CNetObj_PlayerInput & Input)
 				Input.m_TargetY = 1;
 				Input.m_Fire = 1;
 				if(GetCharacter()->GetWeaponGot(WEAPON_GRENADE) && GetCharacter()->GetWeaponAmmo(WEAPON_GRENADE))
-					GetCharacter()->SetActiveWeapon(WEAPON_GRENADE);
+					Input.m_WantedWeapon = 1+ WEAPON_GRENADE;
 				else if(false && GetCharacter()->GetWeaponGot(WEAPON_LASER) && GetCharacter()->GetWeaponAmmo(WEAPON_LASER))
 					GetCharacter()->SetActiveWeapon(WEAPON_LASER);
 			}
@@ -5586,7 +5586,7 @@ void CGameClient::HandleBot(CNetObj_PlayerInput & Input)
 				Input.m_TargetY = 1;
 				Input.m_Fire = 1;
 				if(GetCharacter()->GetWeaponGot(WEAPON_GRENADE) && GetCharacter()->GetWeaponAmmo(WEAPON_GRENADE))
-					GetCharacter()->SetActiveWeapon(WEAPON_GRENADE);
+					Input.m_WantedWeapon = 1+ WEAPON_GRENADE;
 				else if(false && GetCharacter()->GetWeaponGot(WEAPON_LASER) && GetCharacter()->GetWeaponAmmo(WEAPON_LASER))
 					GetCharacter()->SetActiveWeapon(WEAPON_LASER);
 			}
@@ -5646,7 +5646,7 @@ void CGameClient::HandleBot(CNetObj_PlayerInput & Input)
 	//HELP
 	if(!m_DoGrenadeJump && ((jumpifgoingtofall ? !(Collision()->FastIntersectLine(*m_pPos,*m_pPos + vec2(0.f,1000.f),nullptr,nullptr)) : false) || (butjumpifwall ? m_pCore->m_Colliding : false) || (!dontjump && ((Collision()->GetCollisionAt(m_pPos->x , m_pPos->y + GetCharacter()->GetProximityRadius() / 3.f) == TILE_DEATH) || !Collision()->FastIntersectLine(*m_pPos,*m_pPos + vec2(0.f,1000.f),nullptr,nullptr) || m_pCore->m_Colliding || (((Collision()->CheckPoint(m_pPos->x + GetCharacter()->GetProximityRadius() / 2, m_pPos->y + GetCharacter()->GetProximityRadius() / 2 + 5)) && !(Collision()->CheckPoint(m_pPos->x - GetCharacter()->GetProximityRadius() / 2, m_pPos->y + GetCharacter()->GetProximityRadius() / 2 + 5)))) || ((!(Collision()->CheckPoint(m_pPos->x + GetCharacter()->GetProximityRadius() / 2, m_pPos->y + GetCharacter()->GetProximityRadius() / 2 + 5)) && (Collision()->CheckPoint(m_pPos->x - GetCharacter()->GetProximityRadius() / 2, m_pPos->y + GetCharacter()->GetProximityRadius() / 2 + 5)))) || targetisup))))
 	{
-		if((GetCharacter()->IsGrounded() || (m_pCore->m_Jumps > 0 && m_pCore->m_Vel.y > 0)) && !Input.m_Jump)
+		if(GetCharacter()->IsGrounded() || (m_pCore->m_Jumps > 0 && m_pCore->m_Vel.y > 0))
 			Input.m_Jump = true;
 		else
 			Input.m_Jump = false;
